@@ -3,6 +3,7 @@
 
 #include "Character/BaseCharacter.h"
 
+#include "MotionWarpingComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
 #include "Components/CombatComponent.h"
@@ -10,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Props/WeaponBase.h"
 
 // Sets default values
 ABaseCharacter::ABaseCharacter()
@@ -20,6 +22,9 @@ ABaseCharacter::ABaseCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat Component"));
 	LockOnComponent = CreateDefaultSubobject<ULockOnComponent>(TEXT("Lock-On Component"));
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
+
+	ProjectileSpawnLocation = CreateDefaultSubobject<USceneComponent>(TEXT("Projectile Spawn"));
+	ProjectileSpawnLocation->SetupAttachment(GetRootComponent());
 }
 
 void ABaseCharacter::HitboxInit_Implementation()
@@ -59,6 +64,11 @@ void ABaseCharacter::HitReaction_Implementation(FAttack IncomingAttack, ACharact
 void ABaseCharacter::AOEAttack_Implementation()
 {
 	CombatComponent->AOEAttack();
+}
+
+void ABaseCharacter::ShootProjectile_Implementation()
+{
+	CombatComponent->ShootProjectile();
 }
 
 void ABaseCharacter::StartAttack(UAnimMontage* AttackAnimation)

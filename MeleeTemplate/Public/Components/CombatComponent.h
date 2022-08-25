@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Structs/Attack.h"
-#include "Character/BaseCharacter.h"
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
-
+class ABaseCharacter;
+class AWeaponBase;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MELEETEMPLATE_API UCombatComponent : public UActorComponent
 {
@@ -18,8 +18,6 @@ class MELEETEMPLATE_API UCombatComponent : public UActorComponent
 
 	UPROPERTY()
 	ABaseCharacter* Owner;
-
-	
 	
 	FVector HitboxPreviousLocation;
 
@@ -52,6 +50,8 @@ public:
 	virtual void SetHitboxLocation();
 	virtual void SweepTraces();
 	virtual void ResetCombat();
+
+	virtual void ShootProjectile();
 
 	virtual void DetermineComboExecution();
 

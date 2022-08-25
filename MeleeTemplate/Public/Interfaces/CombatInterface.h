@@ -44,6 +44,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void AOEAttack();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void ShootProjectile();
 };
 
 

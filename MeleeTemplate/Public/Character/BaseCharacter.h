@@ -3,11 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MotionWarpingComponent.h"
-#include "Components/LockOnComponent.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/CombatInterface.h"
-#include "Props/WeaponBase.h"
 #include "BaseCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -35,6 +32,9 @@ enum EPlayerStats
 	SPD UMETA(DisplayName="Speed"),
 };
 
+class UMotionWarpingComponent;
+class ULockOnComponent;
+class AWeaponBase;
 UCLASS()	
 class MELEETEMPLATE_API ABaseCharacter : public ACharacter, public ICombatInterface
 {
@@ -47,6 +47,8 @@ public:
 	
 	FTimerHandle HitStunHandle;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	USceneComponent* ProjectileSpawnLocation;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TMap<TEnumAsByte<EPlayerStats>, float> CharacterStats;
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -81,6 +83,7 @@ public:
 	virtual void HitboxEnd_Implementation() override;
 	virtual void HitReaction_Implementation(FAttack IncomingAttack, ACharacter* AttackingCharacter) override;
 	virtual void AOEAttack_Implementation() override;
+	virtual void ShootProjectile_Implementation() override;
 
 	virtual void StartAttack(UAnimMontage* AttackAnimation);
 	void CalculateDamage(FAttack IncomingAttack, ACharacter* AttackingCharacter);

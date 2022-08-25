@@ -32,6 +32,7 @@ enum EAttackDirectionReaction
 /**
  * 
  */
+class AProjectile;
 USTRUCT(BlueprintType)
 struct FAttack
 {
@@ -79,5 +80,10 @@ struct FAttack
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition = "AttackCategory == EAttackCategory::Skill", EditConditionHides))
 	bool SkillHeals;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool IsProjectile = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition = "IsProjectile == true", EditConditionHides))
+	TSubclassOf<AProjectile> ProjectileClass;
 };

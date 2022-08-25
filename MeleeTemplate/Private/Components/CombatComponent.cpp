@@ -3,8 +3,12 @@
 
 #include "Components/CombatComponent.h"
 
+#include "Projectile.h"
+#include "Character/BaseCharacter.h"
+#include "Components/LockOnComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Props/WeaponBase.h"
 
 // Sets default values for this component's properties
 UCombatComponent::UCombatComponent()
@@ -57,12 +61,9 @@ void UCombatComponent::ChooseAttack(int32& Counter)
 
 void UCombatComponent::Attack()
 {
-	
 	RotateOwnerToTarget();
 	ChooseAttack(ComboCounter);
-	
 	Owner->StartAttack(CurrentAttack.Animation);
-	
 }
 
 void UCombatComponent::Skill(FAttack IncomingSkill)
@@ -115,8 +116,8 @@ void UCombatComponent::HandleSkillInput(FAttack IncomingSkill)
 {
 	if (!Owner || !OwnerWeapon)
 		return;
-
-	Skill(IncomingSkill);
+	
+		Skill(IncomingSkill);
 }
 
 void UCombatComponent::SetHitboxLocation()
@@ -151,6 +152,29 @@ void UCombatComponent::SweepTraces()
 void UCombatComponent::ResetCombat()
 {
 	ComboCounter = 0;
+}
+
+void UCombatComponent::ShootProjectile()
+{
+	
+	UWorld* World = GetWorld();
+	AProjectile* Projectile;
+	if (World)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		SpawnParams.Instigator = GetOwner()->GetInstigator();
+
+		 Projectile = World->SpawnActor<AProjectile>(
+				CurrentAttack.ProjectileClass,
+				Owner->ProjectileSpawnLocation->GetComponentLocation(),
+				FRotator::ZeroRotator,
+				SpawnParams);
+		if (Projectile)
+		{
+			Projectile->FireInDirection(GetOwner()->GetActorRotation().Vector());
+		}
+	}
 }
 
 void UCombatComponent::DetermineComboExecution()
