@@ -28,11 +28,8 @@ public:
 	AWeaponBase();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAttack DashAttack;
+	UAttackAsset* DashAttack;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TArray<FAttack> BasicAttacks;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCapsuleComponent* Hitbox;
 
@@ -41,6 +38,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float DamageRangeMax = 12;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<UAttackAsset*> BasicAttackList;
 
 protected:
 	// Called when the game starts or when spawned

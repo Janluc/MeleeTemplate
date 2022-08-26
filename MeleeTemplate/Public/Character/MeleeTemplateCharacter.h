@@ -23,8 +23,8 @@ class AMeleeTemplateCharacter : public ABaseCharacter
 	class UCameraComponent* FollowCamera;
 
 	
-	UFUNCTION(BlueprintCallable)
-	virtual void TryAttack();
+	
+	virtual void TryAttack_Implementation() override;
 
 	UFUNCTION(BlueprintCallable)
 	virtual void TrySkillSlot1();
@@ -43,11 +43,11 @@ public:
 	float TurnRateGamepad;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAttack SkillSlot1;
+	UAttackAsset* SkillSlot1;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAttack SkillSlot2;
+	UAttackAsset* SkillSlot2;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FAttack SkillSlot3;
+	UAttackAsset* SkillSlot3;
 
 protected:
 

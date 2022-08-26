@@ -34,7 +34,7 @@ public:
 	void HitboxEnd();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void HitReaction(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	void HitReaction(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void InputBufferHandle();
@@ -47,6 +47,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void ShootProjectile();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void HealSkill();
 };
 
 

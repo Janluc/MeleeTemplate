@@ -14,7 +14,7 @@ class MELEETEMPLATE_API UCombatComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-	bool bInputBuffer;
+	
 
 	UPROPERTY()
 	ABaseCharacter* Owner;
@@ -26,21 +26,24 @@ public:
 	// Sets default values for this component's properties
 	UCombatComponent();
 
+	bool bInputBuffer;
+
 	int32 ComboCounter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AWeaponBase* OwnerWeapon;
-	virtual void HandleAttackInput();
 	void RotateOwnerToTarget();
-	void ChooseAttack(int32& Counter);
-	virtual void Attack();
-	virtual void Skill(FAttack IncomingSkill);
-	virtual void CheckComboCounter(TArray<FAttack> AttackList);
+	void ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks);
+	UFUNCTION(BlueprintCallable)
+	virtual void ComboAttack(TArray<UAttackAsset*> ComboAttacks);
+	UFUNCTION(BlueprintCallable)
+	virtual void Skill(UAttackAsset* IncomingSkill);
+	virtual void CheckComboCounter(TArray<UAttackAsset*> AttackList);
 
 	virtual void AOEAttack();
 
 
 	
-	virtual void HandleSkillInput(FAttack IncomingSkill);
+	virtual void HandleSkillInput(UAttackAsset* IncomingSkill);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 DashAttackDistance = 500;
 
@@ -53,7 +56,7 @@ public:
 
 	virtual void ShootProjectile();
 
-	virtual void DetermineComboExecution();
+	virtual void DetermineComboExecution(TArray<UAttackAsset*> ComboAttacks);
 
 	void HitSweepedEnemies(TArray<FHitResult> HitActors);
 
@@ -62,7 +65,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bHitboxDebug;
 
-	FAttack CurrentAttack;
+	UPROPERTY()
+	UAttackAsset* CurrentAttack;
 
 	UPROPERTY()
 	TArray<AActor*> HitEnemies;

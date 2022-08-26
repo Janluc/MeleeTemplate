@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Props/WeaponBase.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMeleeTemplateCharacter
@@ -58,10 +59,21 @@ AMeleeTemplateCharacter::AMeleeTemplateCharacter()
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-void AMeleeTemplateCharacter::TryAttack()
+
+void AMeleeTemplateCharacter::TryAttack_Implementation()
 {
-	
-	CombatComponent->HandleAttackInput();
+	switch (CharacterState)
+	{
+	case Idle:
+		CombatComponent->ComboAttack(EquippedWeapon->BasicAttackList);
+		break;
+			
+	case Attacking:
+		CombatComponent->bInputBuffer = true;
+		break;
+			
+	default: break;
+	}
 }
 
 void AMeleeTemplateCharacter::TrySkillSlot1()

@@ -20,26 +20,6 @@ UCombatComponent::UCombatComponent()
 	// ...
 }
 
-void UCombatComponent::HandleAttackInput()
-{
-	GEngine->AddOnScreenDebugMessage(1, 5, FColor::Red, "Attack Input Handled");
-
-	if (!Owner || !OwnerWeapon)
-		return;
-
-	switch (Owner->CharacterState)
-	{
-		case Idle:
-			Attack();
-		break;
-			
-		case Attacking:
-			bInputBuffer = true;
-		break;
-			
-		default: break;
-	}
-}
 
 void UCombatComponent::RotateOwnerToTarget()
 {
@@ -52,28 +32,35 @@ void UCombatComponent::RotateOwnerToTarget()
 	GetOwner()->SetActorRotation(FRotator(0, LookAtRot.Yaw, 0));
 }
 
-void UCombatComponent::ChooseAttack(int32& Counter)
+void UCombatComponent::ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks)
 {
-	CheckComboCounter(OwnerWeapon->BasicAttacks);
-	CurrentAttack = OwnerWeapon->BasicAttacks[Counter];
+	CheckComboCounter(ComboAttacks);
+	CurrentAttack = ComboAttacks[Counter];
 	Counter++;
 }
 
-void UCombatComponent::Attack()
+void UCombatComponent::ComboAttack(TArray<UAttackAsset*> ComboAttacks)
 {
+	if (ComboAttacks.IsEmpty())
+		return;
+	
 	RotateOwnerToTarget();
-	ChooseAttack(ComboCounter);
-	Owner->StartAttack(CurrentAttack.Animation);
+	ChooseAttack(ComboCounter,ComboAttacks);
+	Owner->StartAttack(CurrentAttack->Animation);
 }
 
-void UCombatComponent::Skill(FAttack IncomingSkill)
+void UCombatComponent::Skill(UAttackAsset* IncomingSkill)
 {
+	if (!IncomingSkill)
+		return;
+	
 	RotateOwnerToTarget();
 	CurrentAttack = IncomingSkill;
-	Owner->StartAttack(CurrentAttack.Animation);
+	bInputBuffer = false;
+	Owner->StartAttack(CurrentAttack->Animation);
 }
 
-void UCombatComponent::CheckComboCounter(TArray<FAttack> AttackList)
+void UCombatComponent::CheckComboCounter(TArray<UAttackAsset*> AttackList)
 {
 	if (ComboCounter >= AttackList.Num())
 		ComboCounter = 0;
@@ -112,7 +99,7 @@ void UCombatComponent::AOEAttack()
 	HitSweepedEnemies(HitResults);
 }
 
-void UCombatComponent::HandleSkillInput(FAttack IncomingSkill)
+void UCombatComponent::HandleSkillInput(UAttackAsset* IncomingSkill)
 {
 	if (!Owner || !OwnerWeapon)
 		return;
@@ -166,7 +153,7 @@ void UCombatComponent::ShootProjectile()
 		SpawnParams.Instigator = GetOwner()->GetInstigator();
 
 		 Projectile = World->SpawnActor<AProjectile>(
-				CurrentAttack.ProjectileClass,
+				CurrentAttack->ProjectileClass,
 				Owner->ProjectileSpawnLocation->GetComponentLocation(),
 				FRotator::ZeroRotator,
 				SpawnParams);
@@ -177,12 +164,12 @@ void UCombatComponent::ShootProjectile()
 	}
 }
 
-void UCombatComponent::DetermineComboExecution()
+void UCombatComponent::DetermineComboExecution(TArray<UAttackAsset*> ComboAttacks)
 {
 	if(bInputBuffer)
 	{
 		bInputBuffer = false;
-		Attack();
+		ComboAttack(ComboAttacks);
 	}
 	else
 		Owner->CharacterState = Idle;

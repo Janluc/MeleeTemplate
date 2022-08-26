@@ -3,32 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AttackAsset.h"
 #include "Attack.generated.h"
 
 class UNiagaraSystem;
-UENUM(BlueprintType)
-enum EAttackCategory
-{
-	Basic UMETA(DisplayName = "Basic Attack"),
-	Skill UMETA(DisplayName = "Skill")
-};
-UENUM(BlueprintType)
-enum EAttackType
-{
-	Light UMETA(DisplayName="Light Attack"),
-	Medium UMETA(DisplayName="Medium Attack"),
-	Heavy UMETA(DisplayName="Heavy Attack"),
-	Flurry UMETA(DisplayName = "Flurry")
-};
 
-UENUM(BlueprintType)
-enum EAttackDirectionReaction
-{
-	Right UMETA(DisplayName="Right Dir"),
-	Left UMETA(DisplayName="Left Dir"),
-	DownToUp UMETA(DisplayName = "Down To Up Dir"),
-	Thrust UMETA(DisplayName = "Thrust Direction")
-};
 /**
  * 
  */

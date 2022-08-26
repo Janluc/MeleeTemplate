@@ -44,7 +44,13 @@ class MELEETEMPLATE_API ABaseCharacter : public ACharacter, public ICombatInterf
 public:
 	// Sets default values for this character's properties
 	ABaseCharacter();
-	
+
+	UFUNCTION(BlueprintNativeEvent)
+	void TryAttack();
+
+	virtual void TryAttack_Implementation();
+
+	virtual void HealSkill_Implementation() override;
 	FTimerHandle HitStunHandle;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
@@ -78,33 +84,36 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void DamageTaken(float DamageAmount);
 
+	UFUNCTION(BlueprintCallable)
+	void ModifyHealth(float ChangeAmount);
+
 	virtual void HitboxInit_Implementation() override;
 	virtual void HitboxSweep_Implementation() override;
 	virtual void HitboxEnd_Implementation() override;
-	virtual void HitReaction_Implementation(FAttack IncomingAttack, ACharacter* AttackingCharacter) override;
+	virtual void HitReaction_Implementation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter) override;
 	virtual void AOEAttack_Implementation() override;
 	virtual void ShootProjectile_Implementation() override;
 
 	virtual void StartAttack(UAnimMontage* AttackAnimation);
-	void CalculateDamage(FAttack IncomingAttack, ACharacter* AttackingCharacter);
-	void DetermineHitReactionAnimation(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	void CalculateDamage(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
+	void DetermineHitReactionAnimation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UMotionWarpingComponent* MotionWarping;
 	
 	UFUNCTION(BlueprintNativeEvent)
-	void BasicAttackHitReaction(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	void BasicAttackHitReaction(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 
 	UFUNCTION(BlueprintNativeEvent)
-	void SkillHitReaction(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	void SkillHitReaction(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 
 
-	virtual void LightAttackHitReaction(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	virtual void LightAttackHitReaction(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 	virtual void InputBufferHandle_Implementation() override;
 	virtual void EndAttack_Implementation() override;
 
 	UFUNCTION()
-	void HitStunStart(FAttack IncomingAttack, ACharacter* AttackingCharacter);
+	void HitStunStart(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter);
 
 	UFUNCTION()
 	void HitStunEnd(ACharacter* AttackingCharacter);

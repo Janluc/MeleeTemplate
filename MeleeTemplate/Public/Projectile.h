@@ -29,9 +29,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UProjectileMovementComponent* ProjectileMovementComponent;
-	
+	UPROPERTY()
 	ABaseCharacter* OwnerCharacter;
-	FAttack CurrentAttack;
+	UPROPERTY()
+	UAttackAsset* CurrentAttack;
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
 

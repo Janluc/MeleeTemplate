@@ -27,6 +27,21 @@ ABaseCharacter::ABaseCharacter()
 	ProjectileSpawnLocation->SetupAttachment(GetRootComponent());
 }
 
+void ABaseCharacter::TryAttack_Implementation()
+{
+}
+
+void ABaseCharacter::HealSkill_Implementation()
+{
+	ModifyHealth(CombatComponent->CurrentAttack->HealAmount);
+}
+
+void ABaseCharacter::ModifyHealth(float ChangeAmount)
+{
+	DamageTaken(ChangeAmount);
+	CharacterStats.Add(HP, CharacterStats.FindChecked(HP) + ChangeAmount);
+}
+
 void ABaseCharacter::HitboxInit_Implementation()
 {
 	CombatComponent->SetHitboxLocation();
@@ -44,10 +59,10 @@ void ABaseCharacter::HitboxEnd_Implementation()
 	MotionWarping->RemoveWarpTarget(FName("AttackTarget"));
 }
 
-void ABaseCharacter::HitReaction_Implementation(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::HitReaction_Implementation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
 	SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), AttackingCharacter->GetActorLocation()));
-	switch (IncomingAttack.AttackCategory)
+	switch (IncomingAttack->AttackCategory)
 	{
 		case Basic:
 			BasicAttackHitReaction(IncomingAttack, AttackingCharacter);
@@ -75,7 +90,7 @@ void ABaseCharacter::StartAttack(UAnimMontage* AttackAnimation)
 {
 	CharacterState = Attacking;
 	
-	if (IsValid(LockOnComponent->GetLockedOnActor()))
+	if (IsValid(LockOnComponent->GetLockedOnActor()) && !CombatComponent->CurrentAttack->SkillHeals)
 	{
 		if (GetDistanceTo(LockOnComponent->GetLockedOnActor()) < CombatComponent->DashAttackDistance )
 		{
@@ -90,13 +105,13 @@ void ABaseCharacter::StartAttack(UAnimMontage* AttackAnimation)
 		if (GetDistanceTo(LockOnComponent->GetLockedOnActor()) > CombatComponent->MinDashAttackDistance &&
 			GetDistanceTo(LockOnComponent->GetLockedOnActor()) < CombatComponent->DashAttackDistance)
 		{
-			if (!CombatComponent->CurrentAttack.AttackCategory == Skill)
+			if (!CombatComponent->CurrentAttack->AttackCategory == Skill)
 			{
 				CombatComponent->CurrentAttack = EquippedWeapon->DashAttack;
 				
 			}
 			CombatComponent->ComboCounter = 0;
-			PlayAnimMontage(CombatComponent->CurrentAttack.Animation);
+			PlayAnimMontage(CombatComponent->CurrentAttack->Animation);
 			return;
 		}
 	}
@@ -105,25 +120,25 @@ void ABaseCharacter::StartAttack(UAnimMontage* AttackAnimation)
 }
 
 
-void ABaseCharacter::CalculateDamage(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::CalculateDamage(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
 	ABaseCharacter* Attacker = Cast<ABaseCharacter>(AttackingCharacter);
 
 	float IncomingDmg = Attacker->CharacterStats.FindChecked(STR);
-	float AttackMod = IncomingAttack.AttackModifier;
+	float AttackMod = IncomingAttack->AttackModifier;
 	float WeaponDmg = UKismetMathLibrary::RandomFloatInRange(
 		Attacker->EquippedWeapon->DamageRangeMin,
 		Attacker->EquippedWeapon->DamageRangeMax
 	);
 
-	float FinalDmg = ((IncomingDmg / CharacterStats.FindChecked(DEF) + WeaponDmg) * AttackMod);
-	DamageTaken(FinalDmg);
-	CharacterStats.Add(HP, FinalDmg);
+	float FinalDmg = UKismetMathLibrary::FCeil(((IncomingDmg / CharacterStats.FindChecked(DEF) + WeaponDmg) * AttackMod));
+
+	ModifyHealth(FinalDmg);
 }
 
-void ABaseCharacter::DetermineHitReactionAnimation(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::DetermineHitReactionAnimation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
-	switch (IncomingAttack.AttackType)
+	switch (IncomingAttack->AttackType)
 	{
 	case Light:
 		LightAttackHitReaction(IncomingAttack, AttackingCharacter);
@@ -137,7 +152,7 @@ void ABaseCharacter::DetermineHitReactionAnimation(FAttack IncomingAttack, AChar
 	}
 }
 
-void ABaseCharacter::BasicAttackHitReaction_Implementation(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::BasicAttackHitReaction_Implementation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
 	UGameplayStatics::SpawnEmitterAtLocation(this, DefaultHitParticle, GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
 	CalculateDamage(IncomingAttack, AttackingCharacter);
@@ -146,27 +161,27 @@ void ABaseCharacter::BasicAttackHitReaction_Implementation(FAttack IncomingAttac
 }
 
 
-void ABaseCharacter::SkillHitReaction_Implementation(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::SkillHitReaction_Implementation(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
-	if (IncomingAttack.HitEffectNiagara)
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, IncomingAttack.HitEffectNiagara, GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
+	if (IncomingAttack->HitEffectNiagara)
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, IncomingAttack->HitEffectNiagara, GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
 	else
-		UGameplayStatics::SpawnEmitterAtLocation(this, IncomingAttack.HitEffect, GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
+		UGameplayStatics::SpawnEmitterAtLocation(this, IncomingAttack->HitEffect, GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
 	
 	CalculateDamage(IncomingAttack, AttackingCharacter);
 	DetermineHitReactionAnimation(IncomingAttack, AttackingCharacter);
 	HitStunStart(IncomingAttack, AttackingCharacter);
 }
 
-void ABaseCharacter::LightAttackHitReaction(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::LightAttackHitReaction(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
 	FVector KnockbackDirection = GetActorLocation() - AttackingCharacter->GetActorLocation() ;
 	KnockbackDirection.Normalize();
 
-	FVector Knockback = KnockbackDirection * IncomingAttack.KnockbackAmount;
+	FVector Knockback = KnockbackDirection * IncomingAttack->KnockbackAmount;
 
 	GetCharacterMovement()->AddImpulse(FVector(Knockback.X, Knockback.Y, 0), true);
-	switch (IncomingAttack.AttackDirection)
+	switch (IncomingAttack->AttackDirection)
 	{
 	case Left:
 		PlayAnimMontage(LeftLightHitAnimation);
@@ -190,7 +205,7 @@ void ABaseCharacter::LightAttackHitReaction(FAttack IncomingAttack, ACharacter* 
 
 void ABaseCharacter::InputBufferHandle_Implementation()
 {
-	CombatComponent->DetermineComboExecution();
+	CombatComponent->DetermineComboExecution(EquippedWeapon->BasicAttackList);
 }
 
 void ABaseCharacter::EndAttack_Implementation()
@@ -199,7 +214,7 @@ void ABaseCharacter::EndAttack_Implementation()
 	CombatComponent->ResetCombat();
 }
 
-void ABaseCharacter::HitStunStart(FAttack IncomingAttack, ACharacter* AttackingCharacter)
+void ABaseCharacter::HitStunStart(UAttackAsset* IncomingAttack, ACharacter* AttackingCharacter)
 {
 	CustomTimeDilation = 0.01f;
 	AttackingCharacter->CustomTimeDilation = 0.01f;
@@ -207,7 +222,7 @@ void ABaseCharacter::HitStunStart(FAttack IncomingAttack, ACharacter* AttackingC
 	FTimerDelegate Delegate;
 	Delegate.BindUFunction(this, "HitStunEnd", AttackingCharacter);
 	
-	GetWorldTimerManager().SetTimer(HitStunHandle, Delegate, IncomingAttack.HitStunDuration, false);
+	GetWorldTimerManager().SetTimer(HitStunHandle, Delegate, IncomingAttack->HitStunDuration, false);
 }
 
 void ABaseCharacter::HitStunEnd(ACharacter* AttackingCharacter)

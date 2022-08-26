@@ -35,18 +35,18 @@ void AProjectile::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimiti
 	if (!Hit.GetActor() || Hit.GetActor() == GetOwner())
 		return;
 
-	if (CurrentAttack.HitEffect)
+	if (CurrentAttack->HitEffect)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(
 			this,
-			OwnerCharacter->CombatComponent->CurrentAttack.HitEffect,
+			OwnerCharacter->CombatComponent->CurrentAttack->HitEffect,
 			HitLocation, FRotator::ZeroRotator, FVector(.5));
 	}
-	else if (CurrentAttack.HitEffectNiagara)
+	else if (CurrentAttack->HitEffectNiagara)
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 			this,
-			OwnerCharacter->CombatComponent->CurrentAttack.HitEffectNiagara,
+			OwnerCharacter->CombatComponent->CurrentAttack->HitEffectNiagara,
 			HitLocation,
 			FRotator::ZeroRotator,
 			FVector(.5));
