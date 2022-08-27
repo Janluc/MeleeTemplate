@@ -5,7 +5,6 @@
 
 #include "Projectile.h"
 #include "Character/BaseCharacter.h"
-#include "Components/LockOnComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Props/WeaponBase.h"
@@ -21,43 +20,34 @@ UCombatComponent::UCombatComponent()
 }
 
 
-void UCombatComponent::RotateOwnerToTarget()
-{
-	if(!Owner->LockOnComponent->LockedOnActor)
-		return;
-	
-	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(
-		Owner->GetActorLocation(),
-		Owner->LockOnComponent->LockedOnActor->GetActorLocation());
-	GetOwner()->SetActorRotation(FRotator(0, LookAtRot.Yaw, 0));
-}
 
-void UCombatComponent::ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks)
+
+UAttackAsset* UCombatComponent::ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks)
 {
 	CheckComboCounter(ComboAttacks);
 	CurrentAttack = ComboAttacks[Counter];
 	Counter++;
+	return CurrentAttack;
 }
 
-void UCombatComponent::ComboAttack(TArray<UAttackAsset*> ComboAttacks)
+UAttackAsset* UCombatComponent::ChooseComboAttack(TArray<UAttackAsset*> ComboAttacks)
 {
 	if (ComboAttacks.IsEmpty())
-		return;
+		return nullptr;
 	
-	RotateOwnerToTarget();
-	ChooseAttack(ComboCounter,ComboAttacks);
-	Owner->StartAttack(CurrentAttack->Animation);
+	return ChooseAttack(ComboCounter,ComboAttacks);
 }
 
-void UCombatComponent::Skill(UAttackAsset* IncomingSkill)
+UAttackAsset* UCombatComponent::TrySkill(UAttackAsset* IncomingSkill)
 {
 	if (!IncomingSkill)
-		return;
+		return nullptr;
 	
-	RotateOwnerToTarget();
 	CurrentAttack = IncomingSkill;
 	bInputBuffer = false;
-	Owner->StartAttack(CurrentAttack->Animation);
+
+	return CurrentAttack;
+	
 }
 
 void UCombatComponent::CheckComboCounter(TArray<UAttackAsset*> AttackList)
@@ -67,7 +57,13 @@ void UCombatComponent::CheckComboCounter(TArray<UAttackAsset*> AttackList)
 
 }
 
+
 void UCombatComponent::AOEAttack()
+{
+	HitSweepedEnemies(AOESphereTrace());
+}
+
+TArray<FHitResult> UCombatComponent::AOESphereTrace()
 {
 	TArray<FHitResult> HitResults;
 	
@@ -96,15 +92,7 @@ void UCombatComponent::AOEAttack()
 		Sphere,
 		Params);
 
-	HitSweepedEnemies(HitResults);
-}
-
-void UCombatComponent::HandleSkillInput(UAttackAsset* IncomingSkill)
-{
-	if (!Owner || !OwnerWeapon)
-		return;
-	
-		Skill(IncomingSkill);
+	return HitResults;
 }
 
 void UCombatComponent::SetHitboxLocation()
@@ -164,16 +152,6 @@ void UCombatComponent::ShootProjectile()
 	}
 }
 
-void UCombatComponent::DetermineComboExecution(TArray<UAttackAsset*> ComboAttacks)
-{
-	if(bInputBuffer)
-	{
-		bInputBuffer = false;
-		ComboAttack(ComboAttacks);
-	}
-	else
-		Owner->CharacterState = Idle;
-}
 
 TArray<FHitResult> UCombatComponent::TraceAndProvideHit()
 {

@@ -25,6 +25,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void SetUpDownInput(float AxisValue);
+	void RotateOwnerToTarget();
 	bool IsTargetRightOfOwner(float EnemyAngleRelativeToOwner);
 	bool IsTargetLeftOfOwner(float EnemyAngleRelativeToOwner);
 	void ScanRightLeft(FHitResult Hit, float EnemyAngleRelativeToOwner);

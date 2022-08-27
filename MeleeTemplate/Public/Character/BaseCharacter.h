@@ -48,7 +48,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void TryAttack();
 
+	
+
 	virtual void TryAttack_Implementation();
+	void SetAndStartAttack();
 
 	virtual void HealSkill_Implementation() override;
 	FTimerHandle HitStunHandle;

@@ -6,6 +6,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/CombatComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/LockOnComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -60,35 +61,55 @@ AMeleeTemplateCharacter::AMeleeTemplateCharacter()
 // Input
 
 
+
+
 void AMeleeTemplateCharacter::TryAttack_Implementation()
 {
 	switch (CharacterState)
 	{
-	case Idle:
-		CombatComponent->ComboAttack(EquippedWeapon->BasicAttackList);
+		case Idle:
+			SetAndStartAttack();
+		break;
+
+		case Attacking:
+			CombatComponent->bInputBuffer = true;
 		break;
 			
-	case Attacking:
-		CombatComponent->bInputBuffer = true;
-		break;
-			
-	default: break;
+		default: break;
+	}
+}
+
+void AMeleeTemplateCharacter::ActivateSkill(UAttackAsset* SkillSlot)
+{
+	UAttackAsset* Skill = CombatComponent->TrySkill(SkillSlot);
+	if (Skill)
+	{
+		LockOnComponent->RotateOwnerToTarget();
+		StartAttack(Skill->Animation);
 	}
 }
 
 void AMeleeTemplateCharacter::TrySkillSlot1()
 {
-	CombatComponent->HandleSkillInput(SkillSlot1);
+	if (!SkillSlot1)
+		return;
+	
+	ActivateSkill(SkillSlot1);
 }
 
 void AMeleeTemplateCharacter::TrySkillSlot2()
 {
-	CombatComponent->HandleSkillInput(SkillSlot2);
+	if (!SkillSlot2)
+		return;
+	ActivateSkill(SkillSlot2);
 }
 
 void AMeleeTemplateCharacter::TrySkillSlot3()
 {
-	CombatComponent->HandleSkillInput(SkillSlot3);
+	if (!SkillSlot3)
+		return;
+
+	ActivateSkill(SkillSlot3);
 }
 
 void AMeleeTemplateCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)

@@ -31,6 +31,19 @@ void ABaseCharacter::TryAttack_Implementation()
 {
 }
 
+
+void ABaseCharacter::SetAndStartAttack()
+{
+
+	UAttackAsset* Attack = CombatComponent->ChooseComboAttack(EquippedWeapon->BasicAttackList);
+	if (Attack)
+	{
+		LockOnComponent->RotateOwnerToTarget();
+		StartAttack(Attack->Animation);	
+	}
+
+}
+
 void ABaseCharacter::HealSkill_Implementation()
 {
 	ModifyHealth(CombatComponent->CurrentAttack->HealAmount);
@@ -205,7 +218,16 @@ void ABaseCharacter::LightAttackHitReaction(UAttackAsset* IncomingAttack, AChara
 
 void ABaseCharacter::InputBufferHandle_Implementation()
 {
-	CombatComponent->DetermineComboExecution(EquippedWeapon->BasicAttackList);
+	if (CombatComponent->bInputBuffer)
+	{
+		CombatComponent->bInputBuffer = false;
+		SetAndStartAttack();
+	}
+	else
+	{
+		CharacterState = Idle;
+	}
+	
 }
 
 void ABaseCharacter::EndAttack_Implementation()

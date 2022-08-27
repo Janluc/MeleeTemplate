@@ -96,6 +96,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition = "SkillHeals == false", EditConditionHides))
 	float KnockbackAmount = 500.0f;
 
-	
+	virtual FPrimaryAssetId GetPrimaryAssetId() const override
+	{
+		return FPrimaryAssetId("Attacks", GetFName());
+	}
 	
 };

@@ -28,6 +28,17 @@ void ULockOnComponent::SetUpDownInput(float AxisValue)
 	PlayerInput.Y = AxisValue;
 }
 
+void ULockOnComponent::RotateOwnerToTarget()
+{
+	if(!LockedOnActor)
+		return;
+	
+	FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(
+		GetOwner()->GetActorLocation(),
+		LockedOnActor->GetActorLocation());
+	GetOwner()->SetActorRotation(FRotator(0, LookAtRot.Yaw, 0));
+}
+
 void ULockOnComponent::ScanRightLeft(FHitResult Hit, float EnemyAngleRelativeToOwner)
 {
 	if(IsPlayerMovingRight())

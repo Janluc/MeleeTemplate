@@ -25,6 +25,7 @@ class AMeleeTemplateCharacter : public ABaseCharacter
 	
 	
 	virtual void TryAttack_Implementation() override;
+	void ActivateSkill(UAttackAsset* SkillSlot);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void TrySkillSlot1();

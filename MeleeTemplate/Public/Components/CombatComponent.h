@@ -31,19 +31,17 @@ public:
 	int32 ComboCounter;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	AWeaponBase* OwnerWeapon;
-	void RotateOwnerToTarget();
-	void ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks);
+	UAttackAsset* ChooseAttack(int32& Counter, TArray<UAttackAsset*> ComboAttacks);
 	UFUNCTION(BlueprintCallable)
-	virtual void ComboAttack(TArray<UAttackAsset*> ComboAttacks);
+	virtual UAttackAsset* ChooseComboAttack(TArray<UAttackAsset*> ComboAttacks);
 	UFUNCTION(BlueprintCallable)
-	virtual void Skill(UAttackAsset* IncomingSkill);
+	virtual UAttackAsset* TrySkill(UAttackAsset* IncomingSkill);
 	virtual void CheckComboCounter(TArray<UAttackAsset*> AttackList);
+	TArray<FHitResult> AOESphereTrace();
 
 	virtual void AOEAttack();
 
-
 	
-	virtual void HandleSkillInput(UAttackAsset* IncomingSkill);
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 DashAttackDistance = 500;
 
@@ -55,8 +53,6 @@ public:
 	virtual void ResetCombat();
 
 	virtual void ShootProjectile();
-
-	virtual void DetermineComboExecution(TArray<UAttackAsset*> ComboAttacks);
 
 	void HitSweepedEnemies(TArray<FHitResult> HitActors);
 
