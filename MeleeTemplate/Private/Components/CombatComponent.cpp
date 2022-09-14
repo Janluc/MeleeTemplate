@@ -4,6 +4,7 @@
 #include "Components/CombatComponent.h"
 
 #include "Projectile.h"
+#include "AttackAsset.h"
 #include "Character/BaseCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -14,7 +15,7 @@ UCombatComponent::UCombatComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 	
 	// ...
 }
@@ -70,13 +71,14 @@ TArray<FHitResult> UCombatComponent::AOESphereTrace()
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(800);
 	FCollisionQueryParams Params;
 
-	
+#if WITH_EDITOR
 	if (bHitboxDebug)
 	{
 		const FName TraceTag("TraceTag");
 		GetWorld()->DebugDrawTraceTag = TraceTag;
 		Params.TraceTag = TraceTag;
 	}
+#endif
 	
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
@@ -90,6 +92,45 @@ TArray<FHitResult> UCombatComponent::AOESphereTrace()
 		FRotator::ZeroRotator.Quaternion(),
 		TraceObjects,
 		Sphere,
+		Params);
+
+	return HitResults;
+}
+
+void UCombatComponent::FixedHitboxAttack(FVector BoxExtent, FVector BoxLocation)
+{
+	HitSweepedEnemies(FixedHitboxTrace(BoxExtent, BoxLocation));
+	HitEnemies.Empty();
+}
+
+TArray<FHitResult> UCombatComponent::FixedHitboxTrace(FVector BoxExtent, FVector BoxLocation)
+{
+	TArray<FHitResult> HitResults;
+	
+	FCollisionShape Box = FCollisionShape::MakeBox(BoxExtent);
+	FCollisionQueryParams Params;
+
+#if WITH_EDITOR
+	if (bHitboxDebug)
+	{
+		const FName TraceTag("TraceTag");
+		GetWorld()->DebugDrawTraceTag = TraceTag;
+		Params.TraceTag = TraceTag;
+	}
+#endif
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
+	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
+
+	Params.AddIgnoredActor(GetOwner());
+
+	GetWorld()->SweepMultiByObjectType(
+		HitResults,
+		BoxLocation,
+		BoxLocation,
+		FRotator::ZeroRotator.Quaternion(),
+		TraceObjects,
+		Box,
 		Params);
 
 	return HitResults;
@@ -163,13 +204,14 @@ TArray<FHitResult> UCombatComponent::TraceAndProvideHit()
 		);
 	FCollisionQueryParams Params;
 
-	
+#if WITH_EDITOR	
 	if (bHitboxDebug)
 	{
 		const FName TraceTag("TraceTag");
 		GetWorld()->DebugDrawTraceTag = TraceTag;
 		Params.TraceTag = TraceTag;
 	}
+#endif
 	
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
@@ -198,13 +240,3 @@ void UCombatComponent::BeginPlay()
 	// ...
 	
 }
-
-
-// Called every frame
-void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
-}
-

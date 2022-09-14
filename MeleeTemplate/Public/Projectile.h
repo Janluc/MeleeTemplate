@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Structs/Attack.h"
 #include "GameFramework/Actor.h"
 
 #include "Projectile.generated.h"
 
+class UAttackAsset;
 class USphereComponent;
 class UNiagaraComponent;
 class UProjectileMovementComponent;
@@ -35,15 +35,12 @@ public:
 	UAttackAsset* CurrentAttack;
 
 	virtual void NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimitiveComponent* OtherComp, bool bSelfMoved, FVector HitLocation, FVector HitNormal, FVector NormalImpulse, const FHitResult& Hit) override;
+	virtual void NotifyActorBeginOverlap(AActor* OtherActor) override;
 
 	void FireInDirection(const FVector& ShootDirection);
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
 
 };

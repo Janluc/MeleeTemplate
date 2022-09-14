@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Structs/Attack.h"
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
+class UAttackAsset;
 class ABaseCharacter;
 class AWeaponBase;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -39,6 +39,9 @@ public:
 	virtual void CheckComboCounter(TArray<UAttackAsset*> AttackList);
 	TArray<FHitResult> AOESphereTrace();
 
+	virtual void FixedHitboxAttack(FVector BoxExtent, FVector BoxLocation);
+	virtual TArray<FHitResult> FixedHitboxTrace(FVector BoxExtent, FVector BoxLocation);
+
 	virtual void AOEAttack();
 
 	
@@ -58,9 +61,10 @@ public:
 
 	virtual TArray<FHitResult> TraceAndProvideHit();
 
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bHitboxDebug;
-
+#endif
 	UPROPERTY()
 	UAttackAsset* CurrentAttack;
 
@@ -70,10 +74,6 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 		
 };

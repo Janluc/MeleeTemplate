@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
-#include "Structs/Attack.h"
+
 #include "CombatInterface.generated.h"
 
+class UAttackAsset;
 // This class does not need to be modified.
 UINTERFACE()
 class UCombatInterface : public UInterface
@@ -50,6 +51,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void HealSkill();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void FixedHitbox();
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void HitStunStart(float HitStunDuration);
 };
 
 

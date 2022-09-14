@@ -5,24 +5,11 @@
 AWeaponBase::AWeaponBase()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon Mesh"));
 	SetRootComponent(WeaponMesh);
 
 	Hitbox = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Hitbox"));
 	Hitbox->SetupAttachment(GetRootComponent());
-}
-
-// Called when the game starts or when spawned
-void AWeaponBase::BeginPlay()
-{
-	Super::BeginPlay();
 	
 }
-
-// Called every frame
-void AWeaponBase::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
-

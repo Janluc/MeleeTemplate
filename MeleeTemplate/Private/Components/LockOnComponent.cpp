@@ -5,6 +5,7 @@
 
 #include <string>
 
+#include "Character/BaseCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -13,7 +14,7 @@ ULockOnComponent::ULockOnComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
 }
@@ -82,24 +83,36 @@ void ULockOnComponent::ScanEnemiesInInputDirection(TArray<FHitResult> HitResults
 {
 	for (FHitResult Hit : HitResults)
 	{
-		FRotator EnemyLookAtRot = UKismetMathLibrary::FindLookAtRotation(
+		ABaseCharacter* Enemy = Cast<ABaseCharacter>(Hit.GetActor());
+		if (Enemy)
+		{
+			if (Enemy->bIsDead)
+			{
+				return;
+			}
+		}
+		if (Hit.GetActor() && GetOwner())
+		{
+			FRotator EnemyLookAtRot = UKismetMathLibrary::FindLookAtRotation(
 			Hit.GetActor()->GetActorLocation(),
 			GetOwner()->GetActorLocation()
-		);
+			);
 
-		float EnemyAngleRelativeToOwner = UKismetMathLibrary::NormalizedDeltaRotator(
-			EnemyLookAtRot,
-			GetOwner()->GetInstigatorController()->GetControlRotation()).Yaw;
+			float EnemyAngleRelativeToOwner = UKismetMathLibrary::NormalizedDeltaRotator(
+				EnemyLookAtRot,
+				GetOwner()->GetInstigatorController()->GetControlRotation()).Yaw;
 
-		if (PlayerInput.IsZero())
-		{
-			ActorsScanned.AddUnique(Hit.GetActor());
-			continue;
-		}
+			if (PlayerInput.IsZero())
+			{
+				ActorsScanned.AddUnique(Hit.GetActor());
+				continue;
+			}
 		
-		ScanRightLeft(Hit, EnemyAngleRelativeToOwner);
-		ScanForwardBack(Hit, EnemyAngleRelativeToOwner);
-		GEngine->AddOnScreenDebugMessage(1, 2, FColor::Magenta, FString::SanitizeFloat(EnemyAngleRelativeToOwner));
+			ScanRightLeft(Hit, EnemyAngleRelativeToOwner);
+			ScanForwardBack(Hit, EnemyAngleRelativeToOwner);
+			GEngine->AddOnScreenDebugMessage(1, 2, FColor::Magenta, FString::SanitizeFloat(EnemyAngleRelativeToOwner));
+		
+		}
 		
 	}
 }
@@ -188,13 +201,14 @@ TArray<FHitResult> ULockOnComponent::SphereTraceAroundOwner()
 	FCollisionShape Sphere = FCollisionShape::MakeSphere(ScanRadius);
 	FCollisionQueryParams Params;
 
-	
+#if WITH_EDITOR
 	if (bHitboxDebug)
 	{
 		const FName TraceTag("TraceTag");
 		GetWorld()->DebugDrawTraceTag = TraceTag;
 		Params.TraceTag = TraceTag;
 	}
+#endif
 	
 	TArray<TEnumAsByte<EObjectTypeQuery>> TraceObjects;
 	TraceObjects.Add(UEngineTypes::ConvertToObjectType(ECC_Pawn));
@@ -212,23 +226,3 @@ TArray<FHitResult> ULockOnComponent::SphereTraceAroundOwner()
 
 	return HitResults;
 }
-
-
-// Called when the game starts
-void ULockOnComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// ...
-	
-}
-
-
-// Called every frame
-void ULockOnComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
-}
-

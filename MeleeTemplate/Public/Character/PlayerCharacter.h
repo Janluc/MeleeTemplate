@@ -6,11 +6,11 @@
 #include "BaseCharacter.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/CombatInterface.h"
-#include "MeleeTemplateCharacter.generated.h"
+#include "PlayerCharacter.generated.h"
 
 
 UCLASS(config=Game)
-class AMeleeTemplateCharacter : public ABaseCharacter
+class APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
@@ -35,9 +35,11 @@ class AMeleeTemplateCharacter : public ABaseCharacter
 
 	UFUNCTION(BlueprintCallable)
 	virtual void TrySkillSlot3();
+
+
 	
 public:
-	AMeleeTemplateCharacter();
+	APlayerCharacter();
 
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Input)
@@ -50,6 +52,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UAttackAsset* SkillSlot3;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = true))
+	ULockOnComponent* LockOnComponent;
+
 protected:
 
 	/** Called for forwards/backward input */
@@ -58,6 +63,7 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
+	virtual void Jump() override;
 	/** 
 	 * Called via input to turn at a given rate. 
 	 * @param Rate	This is a normalized rate, i.e. 1.0 means 100% of desired turn rate
@@ -76,12 +82,30 @@ protected:
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
+	virtual void BeginPlay() override;
+
+	virtual void HitboxEnd_Implementation() override;
+	virtual void InputBufferHandle_Implementation() override;
+	virtual void SetAndStartAttack() override;
+	virtual void StartAttack(UAnimMontage* AttackAnimation) override;
+	virtual void EndAttack_Implementation() override;
+	bool IsCharacterInDashAttackDistance();
+	
+	
+
+
 protected:
 	
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
+	virtual void Tick(float DeltaSeconds) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UMotionWarpingComponent* MotionWarping;
+
+	
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

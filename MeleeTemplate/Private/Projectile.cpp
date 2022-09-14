@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Character/BaseCharacter.h"
+#include "AttackAsset.h"
 #include "Components/CombatComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -15,7 +16,7 @@
 AProjectile::AProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	SetRootComponent(Collision);
@@ -63,6 +64,48 @@ void AProjectile::NotifyHit(UPrimitiveComponent* MyComp, AActor* Other, UPrimiti
 	
 }
 
+void AProjectile::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+	Super::NotifyActorBeginOverlap(OtherActor);
+	if (!OtherActor || OtherActor == GetOwner())
+		return;
+
+	
+	ABaseCharacter* HitActor = Cast<ABaseCharacter>(OtherActor);
+
+	if (HitActor)
+	{
+		if (HitActor->CharacterState == Dodging)
+			return;
+	}
+	
+	if (CurrentAttack->HitEffect)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(
+			this,
+			OwnerCharacter->CombatComponent->CurrentAttack->HitEffect,
+			OtherActor->GetActorLocation(), FRotator::ZeroRotator, FVector(.5));
+	}
+	else if (CurrentAttack->HitEffectNiagara)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			this,
+			OwnerCharacter->CombatComponent->CurrentAttack->HitEffectNiagara,
+			OtherActor->GetActorLocation(),
+			FRotator::ZeroRotator,
+			FVector(.5));
+	}
+	if (OtherActor->GetClass()->ImplementsInterface(UCombatInterface::StaticClass()))
+	{
+		ICombatInterface::Execute_HitReaction(
+			OtherActor,
+			OwnerCharacter->CombatComponent->CurrentAttack,
+			OwnerCharacter);
+	}
+
+	Destroy();
+}
+
 void AProjectile::FireInDirection(const FVector& ShootDirection)
 {
 	ProjectileMovementComponent->Velocity = ShootDirection * ProjectileMovementComponent->InitialSpeed;
@@ -78,11 +121,4 @@ void AProjectile::BeginPlay()
 		CurrentAttack = OwnerCharacter->CombatComponent->CurrentAttack;
 	}
 	
-}
-
-// Called every frame
-void AProjectile::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }

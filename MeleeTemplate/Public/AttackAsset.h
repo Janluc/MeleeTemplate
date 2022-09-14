@@ -56,7 +56,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition = "SkillHeals == true", EditConditionHides))
 	float HealAmount;
 	
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bHasHyperArmor = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(EditCondition = "AttackCategory == EAttackCategory::Skill && SkillHeals == false", EditConditionHides))
 	UParticleSystem* HitEffect;
 	

@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/CapsuleComponent.h"
-#include "Structs/Attack.h"
 #include "GameFramework/Actor.h"
 #include "WeaponBase.generated.h"
 
+class UAttackAsset;
 UCLASS()
 class MELEETEMPLATE_API AWeaponBase : public AActor
 {
@@ -41,12 +41,5 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UAttackAsset*> BasicAttackList;
-
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	
 };

@@ -54,9 +54,13 @@ public:
 	virtual TArray<FHitResult> SphereTraceAroundOwner();
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FVector2D PlayerInput;
+
+#if WITH_EDITORONLY_DATA
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bHitboxDebug;
+#endif
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ScanRadius = 1200;
 
@@ -66,14 +70,5 @@ public:
 	UPROPERTY()
 	AActor* LockedOnActor;
 	
-
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 		
 };
