@@ -3,8 +3,6 @@
 
 #include "Components/LockOnComponent.h"
 
-#include <string>
-
 #include "Character/BaseCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -102,12 +100,13 @@ void ULockOnComponent::ScanEnemiesInInputDirection(TArray<FHitResult> HitResults
 				EnemyLookAtRot,
 				GetOwner()->GetInstigatorController()->GetControlRotation()).Yaw;
 
+			/*
 			if (PlayerInput.IsZero())
 			{
 				ActorsScanned.AddUnique(Hit.GetActor());
 				continue;
 			}
-		
+		*/
 			ScanRightLeft(Hit, EnemyAngleRelativeToOwner);
 			ScanForwardBack(Hit, EnemyAngleRelativeToOwner);
 			GEngine->AddOnScreenDebugMessage(1, 2, FColor::Magenta, FString::SanitizeFloat(EnemyAngleRelativeToOwner));
@@ -192,6 +191,16 @@ bool ULockOnComponent::IsPlayerMovingForward()
 bool ULockOnComponent::IsPlayerMovingBack()
 {
 	return PlayerInput.Y < 0;
+}
+
+bool ULockOnComponent::IsTargetInLockOnDistance()
+{
+	if (!LockedOnActor)
+		return false;
+
+	float DistanceToTarget = FVector::Dist(GetOwner()->GetActorLocation(), LockedOnActor->GetActorLocation());
+
+	return DistanceToTarget < MaxLockOnDistance;
 }
 
 TArray<FHitResult> ULockOnComponent::SphereTraceAroundOwner()

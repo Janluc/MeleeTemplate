@@ -25,6 +25,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	virtual void SetUpDownInput(float AxisValue);
+	UFUNCTION(BlueprintCallable)
 	void RotateOwnerToTarget();
 	bool IsTargetRightOfOwner(float EnemyAngleRelativeToOwner);
 	bool IsTargetLeftOfOwner(float EnemyAngleRelativeToOwner);
@@ -46,6 +47,9 @@ public:
 
 	virtual bool IsPlayerMovingForward();
 	virtual bool IsPlayerMovingBack();
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool IsTargetInLockOnDistance();
 
 	void ScanEnemiesInInputDirection(TArray<FHitResult> HitResults);
 	void ResetScanSize();

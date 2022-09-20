@@ -12,6 +12,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Props/WeaponBase.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -61,6 +62,8 @@ APlayerCharacter::APlayerCharacter()
 	LockOnComponent = CreateDefaultSubobject<ULockOnComponent>(TEXT("Lock-On Component"));
 	MotionWarping = CreateDefaultSubobject<UMotionWarpingComponent>(TEXT("Motion Warping"));
 
+	AirSticky = CreateDefaultSubobject<USceneComponent>(TEXT("Air Sticky"));
+	AirSticky->SetupAttachment(RootComponent);
 	
 }
 
@@ -68,13 +71,43 @@ APlayerCharacter::APlayerCharacter()
 // Input
 
 
-
+void APlayerCharacter::ShootLoop()
+{
+	if (!LockOnComponent->GetLockedOnActor())
+		return;
+	
+	UAttackAsset* Attack = ShootAttack;
+	Execute_HitReaction(
+		LockOnComponent->GetLockedOnActor(),
+		Attack,
+		this);
+}
 
 void APlayerCharacter::TryAttack_Implementation()
 {
+	if (bCanRotateToTarget)
+	{
+				
+		if (!ShootAttack || !LockOnComponent->GetLockedOnActor())
+			return;
+
+		Execute_EndAttack(this);
+		StopAnimMontage();
+		UAttackAsset* Attack = ShootAttack;
+		Execute_HitReaction(
+			LockOnComponent->GetLockedOnActor(),
+			Attack,
+			this);
+		
+		
+		GetWorldTimerManager().SetTimer(ShootTimerHandle, this, &APlayerCharacter::ShootLoop, 0.1, true);
+		return;
+	}
+	
 	switch (CharacterState)
 	{
-		case Idle:
+		case Idle: default:
+			
 			SetAndStartAttack();
 			
 		break;
@@ -82,9 +115,13 @@ void APlayerCharacter::TryAttack_Implementation()
 		case Attacking: case Dodging:
 			CombatComponent->bInputBuffer = true;
 		break;
-			
-		default: break;
+
 	}
+}
+
+void APlayerCharacter::ReleaseAttack()
+{
+	GetWorldTimerManager().ClearTimer(ShootTimerHandle);
 }
 
 void APlayerCharacter::ActivateSkill(UAttackAsset* SkillSlot)
@@ -157,6 +194,11 @@ void APlayerCharacter::TrySkillSlot3()
 	}
 }
 
+void APlayerCharacter::OnEnemyHit_Implementation()
+{
+	bStickyEnemy = CanAirAttack();
+}
+
 void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -164,6 +206,7 @@ void APlayerCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerIn
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::TryAttack);
+	PlayerInputComponent->BindAction("Attack", IE_Released, this, &APlayerCharacter::ReleaseAttack);
 	PlayerInputComponent->BindAction("SkillSlot1", IE_Pressed, this, &APlayerCharacter::TrySkillSlot1);
 	PlayerInputComponent->BindAction("SkillSlot2", IE_Pressed, this, &APlayerCharacter::TrySkillSlot2);
 	PlayerInputComponent->BindAction("SkillSlot3", IE_Pressed, this, &APlayerCharacter::TrySkillSlot3);
@@ -188,8 +231,50 @@ void APlayerCharacter::Tick(float DeltaSeconds)
 {
 
 	Super::Tick(DeltaSeconds);
+
+	if (bSoftLockOn)
+	{
+		LockOnComponent->TrySoftLockToClosestActorInInputDirection();
+	}
 	
-	LockOnComponent->TrySoftLockToClosestActorInInputDirection();
+
+	if (bStickyEnemy && LastCharacterHit)
+	{
+		//LastCharacterHit->SetActorLocation(AirSticky->GetComponentLocation());
+		
+		LastCharacterHit->SetActorLocation(FMath::VInterpTo(
+			LastCharacterHit->GetActorLocation(),
+			AirSticky->GetComponentLocation(),
+			DeltaSeconds,
+			10
+			));
+			
+	}
+	if (bCanRotateToTarget)
+	{
+		if (LockOnComponent->GetLockedOnActor())
+		{
+			FRotator LookAtRot = UKismetMathLibrary::FindLookAtRotation(
+				GetActorLocation(),
+				LockOnComponent->GetLockedOnActor()->GetActorLocation()
+				);
+			
+			FRotator LookAtRotYaw = FRotator(
+				GetActorRotation().Pitch,
+				LookAtRot.Yaw,
+				GetActorRotation().Roll
+				);
+			
+			SetActorRotation(UKismetMathLibrary::RInterpTo(
+				GetActorRotation(),
+				LookAtRotYaw,
+				DeltaSeconds,
+				5.f
+				));
+
+			
+		}
+	}
 	
 }
 
@@ -209,6 +294,7 @@ void APlayerCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Locat
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	ShootDelegate.BindUFunction(this, "ShootLoop");
 }
 
 void APlayerCharacter::HitboxEnd_Implementation()
@@ -228,13 +314,29 @@ void APlayerCharacter::InputBufferHandle_Implementation()
 	else
 	{
 		CharacterState = Idle;
+		GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+		
 	}
 	
 }
 
+bool APlayerCharacter::CanAirAttack()
+{
+	return GetCharacterMovement()->IsFalling() || GetCharacterMovement()->IsFlying();
+}
+
 void APlayerCharacter::SetAndStartAttack()
 {
-	UAttackAsset* Attack = CombatComponent->ChooseComboAttack(EquippedWeapon->BasicAttackList);
+	UAttackAsset* Attack;
+	if (CanAirAttack())
+	{
+		Attack = CombatComponent->ChooseComboAttack(AirAttacks);
+		GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+	}
+		
+	else
+		Attack = CombatComponent->ChooseComboAttack(EquippedWeapon->BasicAttackList);
+	
 	if (Attack)
 	{
 		if (GetDistanceTo(LockOnComponent->GetLockedOnActor()) < CombatComponent->DashAttackDistance)
@@ -258,10 +360,21 @@ void APlayerCharacter::StartAttack(UAnimMontage* AttackAnimation)
 	if (IsValid(LockOnComponent->GetLockedOnActor()) && !CombatComponent->CurrentAttack->SkillHeals)
 	{
 		ABaseCharacter* Target = Cast<ABaseCharacter>(LockOnComponent->GetLockedOnActor());
-		if (GetDistanceTo(LockOnComponent->GetLockedOnActor()) < CombatComponent->DashAttackDistance)
+		if (Target != LastCharacterHit)
+		{
+			LastCharacterHit = nullptr;
+		}
+		if (GetDistanceTo(Target) < CombatComponent->DashAttackDistance)
 		{
 			FMotionWarpingTarget MotionWarpingTarget;
-			MotionWarpingTarget.Transform.SetLocation(LockOnComponent->GetLockedOnActor()->GetActorLocation());
+			FVector V = GetActorLocation() - Target->GetActorLocation();
+			FVector NewLocation = Target->GetActorLocation() + V / V.Length() * 100;
+			MotionWarpingTarget.Transform.SetLocation(FVector(
+				NewLocation.X,
+				NewLocation.Y,
+				Target->GetActorLocation().Z
+				));
+			
 			MotionWarping->AddOrUpdateWarpTarget(
 				FName("AttackTarget"),
 				MotionWarpingTarget);
@@ -279,6 +392,11 @@ void APlayerCharacter::StartAttack(UAnimMontage* AttackAnimation)
 				CombatComponent->CurrentAttack = EquippedWeapon->DashAttack;
 				
 			}
+			if (Target->GetActorLocation().Z > GetOwner()->GetActorLocation().Z + 90 || CanAirAttack())
+			{
+				GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+				CombatComponent->CurrentAttack = EquippedWeapon->TransitionAttack;
+			}
 			CombatComponent->ComboCounter = 0;
 			PlayAnimMontage(CombatComponent->CurrentAttack->Animation);
 			return;
@@ -292,6 +410,7 @@ void APlayerCharacter::EndAttack_Implementation()
 {
 	Super::EndAttack_Implementation();
 	MotionWarping->RemoveWarpTarget(FName("AttackTarget"));
+	bStickyEnemy = false;
 }
 
 
@@ -299,6 +418,11 @@ bool APlayerCharacter::IsCharacterInDashAttackDistance()
 {
 	return GetDistanceTo(LockOnComponent->GetLockedOnActor()) > CombatComponent->MinDashAttackDistance &&
 		GetDistanceTo(LockOnComponent->GetLockedOnActor()) < CombatComponent->DashAttackDistance;
+}
+
+void APlayerCharacter::SetLastHitCharacter_Implementation(ACharacter* CharacterHit)
+{
+	LastCharacterHit = CharacterHit;
 }
 
 void APlayerCharacter::TurnAtRate(float Rate)
@@ -316,6 +440,7 @@ void APlayerCharacter::LookUpAtRate(float Rate)
 void APlayerCharacter::MoveForward(float Value)
 {
 
+	LockOnComponent->SetUpDownInput(Value);
 	switch (CharacterState)
 	{
 		case Idle:
@@ -323,6 +448,7 @@ void APlayerCharacter::MoveForward(float Value)
 			{
 				StopAnimMontage();
 				Execute_EndAttack(this);
+				
 				// find out which way is forward
 				const FRotator Rotation = Controller->GetControlRotation();
 				const FRotator YawRotation(0, Rotation.Yaw, 0);
@@ -339,7 +465,7 @@ void APlayerCharacter::MoveForward(float Value)
 
 void APlayerCharacter::MoveRight(float Value)
 {
-	
+	LockOnComponent->SetRightLeftInput(Value);
 	switch (CharacterState)
 	{
 		case Idle:

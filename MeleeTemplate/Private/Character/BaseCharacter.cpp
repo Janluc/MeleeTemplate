@@ -87,11 +87,13 @@ void ABaseCharacter::EndAttack_Implementation()
 void ABaseCharacter::HitStunStart_Implementation(float HitStunDuration)
 {
 	HitStunDelegate.Unbind();
+	if (HitStunDuration <= 0)
+		return;
+	
 	CustomTimeDilation = 0.01f;
-	
 	HitStunDelegate.BindUFunction(this, "HitStunEnd");
-	
 	GetWorldTimerManager().SetTimer(HitStunHandle, HitStunDelegate, HitStunDuration, false);
+	
 }
 void ABaseCharacter::HitStunEnd()
 {
@@ -101,13 +103,11 @@ void ABaseCharacter::HitStunEnd()
 
 void ABaseCharacter::SetAndStartAttack()
 {
-
 	UAttackAsset* Attack = CombatComponent->ChooseComboAttack(EquippedWeapon->BasicAttackList);
 	if (Attack)
 	{
 		StartAttack(Attack->Animation);
 	}
-
 }
 
 void ABaseCharacter::ModifyHealth(float ChangeAmount)
@@ -160,12 +160,16 @@ void ABaseCharacter::HitReaction_Implementation(UAttackAsset* IncomingAttack, AC
 		return;
 	
 	CharacterState = Hurt;
-	Knockback(IncomingAttack, AttackingCharacter);
+	
 	RotateTowardsAttacker(AttackingCharacter);
 	GetMovementComponent()->Velocity = FVector::ZeroVector;
+	
 	StopAnimMontage();
 
+	Execute_OnEnemyHit(AttackingCharacter);
+	Execute_SetLastHitCharacter(AttackingCharacter, this);
 	ApplyHitEffects(IncomingAttack);
+	Knockback(IncomingAttack, AttackingCharacter);
 	
 }
 
@@ -213,6 +217,11 @@ void ABaseCharacter::StartAttack(UAnimMontage* AttackAnimation)
 
 void ABaseCharacter::DetermineHitReactionAnimation(UAttackAsset* IncomingAttack)
 {
+	if (GetCharacterMovement()->IsFalling() || IncomingAttack->bIsLauncher)
+	{
+		PlayAnimMontage(AirHitReaction);
+		return;
+	}
 	switch (IncomingAttack->AttackType)
 	{
 	case Light:
@@ -250,9 +259,33 @@ void ABaseCharacter::Knockback(UAttackAsset* IncomingAttack, ACharacter* Attacki
 	KnockbackDirection.Normalize();
 
 	FVector Knockback = KnockbackDirection * IncomingAttack->KnockbackAmount;
+	bool const bAirSpike = IncomingAttack->bIsLauncher && IncomingAttack->bIsAirAttack;
+	bool const bGroundLauncher = IncomingAttack->bIsLauncher;
+	if (bAirSpike)
+	{
+		APlayerCharacter* Player = Cast<APlayerCharacter>(AttackingCharacter);
+		Player->bStickyEnemy = false;
+		GetCharacterMovement()->AddImpulse(
+		FVector(Knockback.X, Knockback.Y, -3000),
+		true
+		);
+		return;
+	}
+	if (bGroundLauncher)
+	{
+		GetCharacterMovement()->AddImpulse(
+		FVector(Knockback.X, Knockback.Y, 1000),
+		true
+		);
+		return;
+	}
 
-	GetCharacterMovement()->AddImpulse(FVector(Knockback.X, Knockback.Y, 1), true);
+	GetCharacterMovement()->AddImpulse(
+		FVector(Knockback.X, Knockback.Y, 1),
+		true
+		);
 }
+	
 
 void ABaseCharacter::LightAttackHitReaction(TEnumAsByte<EAttackDirectionReaction> AttackDirection)
 {

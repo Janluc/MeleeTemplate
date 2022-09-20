@@ -70,6 +70,7 @@ class MELEETEMPLATE_API ABaseCharacter : public ACharacter, public ICombatInterf
 
 	FTimerHandle HitStunHandle;
 	
+
 public:
 	// Sets default values for this character's properties
 	ABaseCharacter();
@@ -87,6 +88,9 @@ public:
 	void HitCameraShake();
 
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UAnimMontage* AirHitReaction;
+	
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	UBoxComponent* FixedHitbox;
 	

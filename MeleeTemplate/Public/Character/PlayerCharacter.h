@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
-#include "GameFramework/Character.h"
-#include "Interfaces/CombatInterface.h"
 #include "PlayerCharacter.generated.h"
 
 
@@ -15,16 +13,23 @@ class APlayerCharacter : public ABaseCharacter
 	GENERATED_BODY()
 
 	/** Camera boom positioning the camera behind the character */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
 	/** Follow camera */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
 
-	
-	
+	UPROPERTY()
+	ACharacter* LastCharacterHit;
+	FTimerHandle ShootTimerHandle;
+	FTimerDynamicDelegate ShootDelegate;
+
+	virtual void ShootLoop();
+
+
 	virtual void TryAttack_Implementation() override;
+	virtual void ReleaseAttack();
 	void ActivateSkill(UAttackAsset* SkillSlot);
 
 	UFUNCTION(BlueprintCallable)
@@ -37,13 +42,29 @@ class APlayerCharacter : public ABaseCharacter
 	virtual void TrySkillSlot3();
 
 
+	virtual void OnEnemyHit_Implementation() override;
 	
 public:
 	APlayerCharacter();
 
+	UPROPERTY(BlueprintReadWrite)
+	bool bCanRotateToTarget;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UAttackAsset* ShootAttack;
+	UPROPERTY(BlueprintReadWrite)
+	bool bSoftLockOn = true;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<UAttackAsset*> AirAttacks;
+
+	bool bStickyEnemy;
 	/** Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Input)
 	float TurnRateGamepad;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USceneComponent* AirSticky;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UAttackAsset* SkillSlot1;
@@ -86,10 +107,13 @@ protected:
 
 	virtual void HitboxEnd_Implementation() override;
 	virtual void InputBufferHandle_Implementation() override;
+	bool CanAirAttack();
 	virtual void SetAndStartAttack() override;
 	virtual void StartAttack(UAnimMontage* AttackAnimation) override;
 	virtual void EndAttack_Implementation() override;
 	bool IsCharacterInDashAttackDistance();
+
+	virtual void SetLastHitCharacter_Implementation(ACharacter* CharacterHit) override;
 	
 	
 
@@ -97,7 +121,7 @@ protected:
 protected:
 	
 	// APawn interface
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -108,8 +132,8 @@ protected:
 	
 public:
 	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
-	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
 

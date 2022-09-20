@@ -20,15 +20,15 @@ class MELEETEMPLATE_API AWeaponBase : public AActor
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	FTransform WeaponTransform;
-
 	
+
 
 public:
 	// Sets default values for this actor's properties
 	AWeaponBase();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UAttackAsset* DashAttack;
+	
+	
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCapsuleComponent* Hitbox;
@@ -39,6 +39,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float DamageRangeMax = 12;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAttackAsset* DashAttack;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAttackAsset* TransitionAttack;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<UAttackAsset*> BasicAttackList;
 	

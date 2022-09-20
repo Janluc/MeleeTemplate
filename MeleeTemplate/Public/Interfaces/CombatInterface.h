@@ -53,8 +53,14 @@ public:
 	void HealSkill();
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void OnEnemyHit();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void FixedHitbox();
 
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void SetLastHitCharacter(ACharacter* CharacterHit);
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void HitStunStart(float HitStunDuration);
 };
